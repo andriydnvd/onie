@@ -1,0 +1,118 @@
+# Installer helpers for mlnx_x86 machines
+
+#  Copyright (C) 2019 Michael Shych <michaelsh@mellanox.com>
+#
+#  SPDX-License-Identifier:     GPL-2.0
+
+. /lib/onie/onie-blkdev-common
+
+onie_image_type_bios_update="bios_update"
+onie_image_type_cpld_update="cpld_update"
+onie_image_type_unknown="unknown"
+fw_update_attempts=0
+max_fw_update_attemts=3
+
+post_fw_update_install()
+{
+    local update_image="$1"
+    rm -f "$update_image"
+    onie-boot-mode -o install
+    if [ -x /tmp/reboot-cmd ] ; then
+        log_console_msg "Calling update supplied reboot-cmd..."
+        /tmp/reboot-cmd
+        sleep 5
+    else
+        log_console_msg "Rebooting..."
+        reboot && return 0
+    fi
+}
+
+mlnx_fw_update_install()
+{
+    rc=0
+    local update_image="$1"
+    local image_version=
+    if [ "$image_type" = "$onie_image_type_bios_update" ]; then
+	bios_update.sh "$update_image" no_checksum
+	result=$?
+	local image_version="$(/usr/bin/bios_check_file_version.sh "$1" | awk '{print $6}')"
+    elif [ "$image_type" = "$onie_image_type_cpld_update" ]; then
+	cpldupdate "$update_image" | grep "PASS!"
+	result=$?
+    else
+	result=1
+    fi
+    fw_update_attempts=$((fw_update_attempts+1))
+
+    update_filename=$(basename "$update_image")
+    local results_file="${onie_update_results_dir}/${update_filename}"
+    # Dump information about the update process into the results file.
+    (cat <<EOF
+onie_update_status_code=$result
+onie_update_image_url=$update_image
+onie_update_image_type=$image_type
+onie_update_attempts=$fw_update_attempts
+EOF
+) > "$results_file"
+
+    if [ "$image_type" = "$onie_image_type_bios_update" ]; then
+        (cat <<EOF
+onie_update_image_version=$image_version
+EOF
+) >> "$results_file"
+    fi
+
+# Remove image in any case and return old boot order
+    if [ $result -eq 0 ] ; then
+        log_console_msg " firmware update install successful: $update_image"
+	log_fw_update "Success: $image_type firmware update: $update_image"
+	if [ -n "$image_version" ]; then
+	    log_fw_update "Success: $image_type firmware update version: $image_version"
+	fi
+        post_fw_update_install "$update_image"
+    else
+	log_fw_update "ERROR: $image_type firmware update: $update_image, attempt: $fw_update_attempts"
+	if [ -n "$image_version" ]; then
+	    log_fw_update "ERROR: $image_type firmware update version: $image_version, attempt: $fw_update_attempts"
+	fi
+        if [ $fw_update_attempts -lt $max_fw_update_attemts ]; then
+            mlnx_fw_update_install "$update_image"
+        else
+            post_fw_update_install "$update_image"
+        fi
+        rc=1
+    fi
+    return $rc
+}
+
+# Additional check of image type.
+# BIOS or CPLD image type should be checked only in update
+#   boot mode or ine-fwpkg add or show-pending commands
+check_update_image_type()
+{
+    image_file=$1
+    pending_image=$2
+    rc=0
+    if [ "$image_type" = "$onie_image_type_update" ]; then
+	echo -n $onie_image_type_update
+        return 0
+    else
+        if [ "$onie_boot_reason" = "update" ] || [ $pending_image -eq 1 ]; then
+            ext="${image_file##*.}"
+            if [ "$ext" = "vme" ]; then
+                echo -n $onie_image_type_cpld_update
+            else
+                extl=$(echo $ext | awk '{print tolower($ext)}')
+                if [ "$extl" = "rom" ]; then
+                    echo -n $onie_image_type_bios_update
+                else
+                    rc=1
+                    echo -n $onie_image_type_unknown
+                fi
+            fi
+        else
+            echo -n $onie_image_type_nos
+	fi
+    fi
+    return $rc
+}

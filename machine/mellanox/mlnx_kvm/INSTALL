@@ -1,0 +1,80 @@
+=============================================
+Installing ONIE on x86_64 KVM Machine
+=============================================
+
+Cross-Compiling ONIE
+====================
+
+Change directories to ``build-config`` to compile ONIE.
+
+To compile ONIE first change directories to ``build-config`` and then
+type ``"make MACHINE=mlnx_kvm all"``.  For example::
+
+  $ cd build-config
+  $ make -j24 MACHINE=mlnx_kvm all recovery-initrd recovery-iso
+
+When complete, the ONIE binaries are located in
+``build/images``::
+
+ mlnx_kvm-r0.initrd 
+ mlnx_kvm-r0.vmlinuz
+ onie-updater-x86_64-mlnx_kvm-r0
+ onie-recovery-x86_64-mlnx_kvm-r0.iso
+
+``build/mlnx_kvm-r0/recovery``::
+ x86_64-mlnx_kvm-r0.initrd
+
+mlnx_kvm-r0.vmlinuz -- This is the ONIE kernel image
+
+mlnx_kvm-r0.initrd  -- This is the ONIE initramfs (filesystem)
+
+onie-updater-x86_64-mlnx_kvm-r0 -- This is the ONIE self-update
+image.  This image is a self-extracting archive used for installing
+ONIE.
+
+onie-recovery-x86_64-mlnx_kvm-r0.iso -- This is a recovery ISO image
+that can be install as a CDROM image.
+
+x86_64-mlnx_kvm-r0.initrd -- This recovery ONIE initramfs contains
+onie-updater image. This file is used for ONIE install over network.
+
+
+Install new x86_64 KVM Machine using the PXE boot
+=========================================================
+
+Copy built mlnx_kvm-r0.vmlinuz and x86_64-mlnx_kvm-r0.initrd to
+directory relative to /tftpboot
+E.g. /tftpboot/onie_release/2018.08-5.2.0006/kvm
+
+Create PXE label for ONIE install
+For example:
+
+LABEL onie_kvm_msn2100
+        kernel onie_release/2018.08-5.2.0006/kvm/mlnx_kvm-r0.vmlinuz
+        append initrd=onie_release/2018.08-5.2.0006/kvm/x86_64-mlnx_kvm-r0.initrd panic=10 noexec=off console=tty0 console=ttyS0,115200n8 ramdisk_size=1048576 root=/dev/ram boot_reason=embed install_url=file:///lib/onie/onie-updater boot_env=recovery live_machine=msn2100 live_machine_suffix=cb2fo live_base_mac=aa:bb:cc:10:10:10
+
+Machine name must be passed during ONIE install through kernel cmdline argument live_machine.
+The value of this argument will be written as "Product Name" (ONIE-SYSEEPROM field 0x21)
+to EEPROM simulation file as well as onie_machine to machine.conf file.
+live_machine_suffix is optional parameter. It's used for creating "Part Number" 
+(ONIE-SYSEEPROM field 0x22)
+live_base_mac is also optional parameter. It's written to "Base MAC Address (ONIE-SYSEEPROM field 0x24)
+Default values will be used if live_machine_suffix and live_base_mac aren't passed.
+
+ONIE install will be done after booting appropriate image with right parameters.
+ONIE syseeprom installation file is created during install if EEPROM simulation file is empty
+or machine name simulation was installed before on this VM.
+
+EEPROM Access
+=====================
+
+The virtual machine implementation includes a simulation of a system
+EEPROM device, using some unused space in the primary disk block
+device.  See the busybox configuration in busybox/conf/config.  This
+block device is hardcoded at compile and must match the
+CONFIG_SYS_EEPROM_DISK_DEVICE configuration parameter.
+
+Configure your hypervisor accordingly, or recompile ONIE to use a disk
+configuration that matches your hypervisor.
+
+

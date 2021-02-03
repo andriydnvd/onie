@@ -1,0 +1,144 @@
+#!/bin/sh
+
+#  Copyright (C) 2014 Curt Brune <curt@cumulusnetworks.com>
+#
+#  SPDX-License-Identifier:     GPL-2.0
+
+# Make a tarball of "interesting" system info.  This could be used by
+# an installer to gather system info, saving it to document the
+# install.
+
+output_dir=$1
+
+[ -d "$output_dir" ] || {
+    echo "Error: Output directory does not exist: $output_dir"
+    echo "Usage: $0 <output_directory>"
+    exit 1
+}
+
+support_arch()
+{
+    save_dir="$1"
+    # NO-OP
+}
+
+support_platform()
+{
+    save_dir="$1"
+    # NO-OP
+}
+
+[ -r /lib/onie/support-arch ]     && . /lib/onie/support-arch
+[ -r /lib/onie/support-platform ] && . /lib/onie/support-platform
+[ -r /lib/onie/functions ] && . /lib/onie/functions
+
+cleanup() {
+    umount $tmpdir > /dev/null 2>&1
+    rm -rf $tmpdir
+    exit $1
+}
+
+mlnx_i2c_scan()
+{
+    i2ctmpdir=/tmp/i2cbus
+    mkdir $i2ctmpdir
+    cd $i2ctmpdir
+    ls /dev/i2c* | cut -d - -f 2 | xargs touch
+    cd - >> /dev/null 2>&1
+    for file in "$i2ctmpdir"/*
+    do
+        i2cbus=$(basename "$file")
+        echo "I2C bus: "$i2cbus >> $save_dir/i2cscan.txt
+        i2cdetect -y -a $i2cbus >> $save_dir/i2cscan.txt
+        echo "" >> $save_dir/i2cscan.txt
+    done
+    rm -fR $i2ctmpdir
+}
+
+mlnx_platform_info()
+{
+    if [ -x /usr/bin/iorw_mlnx ] ; then
+        iorw_mlnx -r > $save_dir/cpld_dump.txt
+    fi
+    if [ -x /usr/bin/bios_version.sh ] ; then
+        bios_version.sh -r > $save_dir/bios_version.txt
+    fi
+    dmidecode -t1 -t2 -t3 >  $save_dir/dmidecode_system.txt
+    dmidecode -t memory > $save_dir/dmidecode_memory.txt
+    dmidecode -t15 >  $save_dir/dmidecode_bios_logs.txt
+    cat /proc/cpuinfo > $save_dir/cpuinfo.txt
+    disk_name=$(fdisk -l | grep Disk | awk '{print $2}' | cut -d : -f 1)
+    smartctl --all $disk_name > $save_dir/smartctl.txt
+    cat $save_dir/smartctl.txt | grep -qi innodisk
+    rc=$?
+    if [ $rc -eq 0 ] ; then
+        iSmart -d $disk_name > $save_dir/ismart.txt
+    fi
+    ethtool eth0 > $save_dir/etho_info.txt
+    lspci > $save_dir/lspci.txt
+    mlnx_pcidev=$(lspci | grep -i "Mellanox" | awk '{print $1}')
+    if [ ! -z "$mlnx_pcidev" ] ; then
+        echo "" >> $save_dir/lspci.txt
+        lspci -vvv -nn -s$mlnx_pcidev >> $save_dir/lspci.txt
+    fi
+    mlnx_i2c_scan
+    vpddata _read_fru 8 0x51 1000 $save_dir/system_vpd.bin 2 >> /dev/null 2>&1
+    # Check if Vendor Extension contains MLNX sanity string 
+    cat $save_dir/onie-syseeprom.txt | grep -m1 "Vendor Extension" | grep -q "0x4D 0x4C 0x4E 0x58"
+    rc=$?
+    if [ $rc -eq 0 ] ; then
+        chassismgr show modules -v > $save_dir/chassis_modules.txt
+        # Don't continue if 1st call to chassimgr failed
+        rc=$?
+        if [ $rc -ne 0 ] ; then
+            return
+        fi
+        chassismgr show devs -v > $save_dir/chassis_devs.txt
+        chassismgr show inventory > $save_dir/chassis_inventory.txt
+        chassismgr show fru "" > $save_dir/chassis_fru.txt
+        chassismgr show temp > $save_dir/chassis_temp.txt
+        chassismgr show power > $save_dir/chassis_power.txt
+        chassismgr show volt > $save_dir/chassis_volt.txt
+    fi
+}
+
+tmpdir=$(mktemp -d)
+mount -t tmpfs tmpfs $tmpdir || {
+    echo "Error: Unable to mount tmpfs."
+    cleanup 1
+}
+
+onie_support_name="onie-support-${onie_machine}.tar.bz2"
+tarfile="$output_dir/$onie_support_name"
+
+tar_dir="onie-support-${onie_machine}"
+save_dir="$tmpdir/$tar_dir"
+rm -rf $save_dir
+mkdir -p $save_dir || {
+    echo "Error: Unable to create onie save directory: $save_dir"
+    cleanup 1
+}
+cp -a /var/log $save_dir
+cat /proc/cmdline > $save_dir/kernel_cmdline.txt
+export > $save_dir/runtime-export-env.txt
+set > $save_dir/runtime-set-env.txt
+ps w > $save_dir/runtime-process.txt
+dmesg > $save_dir/dmesg.txt
+if [ -x /usr/bin/onie-syseeprom ] ; then
+    onie-syseeprom > $save_dir/onie-syseeprom.txt
+fi
+onie-sysinfo -a > $save_dir/onie-sysinfo.txt
+cp /etc/machine*.conf $save_dir
+blkid > $save_dir/blkid.txt
+fdisk -l > $save_dir/fdisk.txt
+mlnx_platform_info
+support_arch
+support_platform
+tar -C $tmpdir -cjf $tarfile $tar_dir || {
+    echo "Error: Unable to create ONIE save tar file: $tarfile"
+    cleanup 1
+}
+
+echo "Success: Support tarball created: $tarfile"
+
+cleanup 0

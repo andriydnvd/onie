@@ -1,0 +1,57 @@
+# Mellanox KVM Machine
+#
+# Runtime config generation mechanism
+
+# /etc/init.d/gen-config.sh sources this file and executes
+# gen_live_config() to generate runtime ONIE variables.
+
+# Three variables of interest to set here:
+#
+# onie_machine		-- runtime ONIE machine name string
+# onie_machine_suffix   -- runtime machine name suffix string
+# onie_base_mac		-- runtime Base MAC address
+
+# Use kernel command line parameters to pass these paramters.
+# Otherwise, onie_machine will be taken from EEPROM.
+
+gen_live_config()
+{
+    # Parse kernel command line options
+    for x in $(cat /proc/cmdline); do
+        parm=${x%%=*}
+        val=${x#*=}
+        case $parm in
+            live_machine)
+                local live_machine=$(echo "$val" | awk '{print tolower($0)}')
+                ;;
+            live_machine_suffix)
+                local live_machine_suffix=$(echo "$val" | awk '{print toupper($0)}')
+                ;;
+	    live_base_mac)
+                local live_base_mac=$(echo "$val" | awk '{print toupper($0)}')
+                ;;
+        esac
+    done
+
+    if [ -z "$live_machine" ]; then
+        tmp=$(/usr/bin/onie-syseeprom -g 0x21 | awk '{print $1}')
+        local live_machine=$(echo "$tmp" | awk '{print tolower($0)}')
+    fi	
+
+        cat<<EOF
+onie_machine=mlnx_"$live_machine"
+EOF
+
+    if [ -n "$live_machine_suffix" ]; then
+        cat<<EOF
+onie_machine_suffix="$live_machine_suffix"
+EOF
+    fi
+
+    if [ -n "$live_base_mac" ]; then
+        cat<<EOF
+onie_base_mac="$live_base_mac"
+EOF
+    fi
+}
+

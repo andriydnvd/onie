@@ -1,0 +1,70 @@
+diff -Nur a/drivers/platform/x86/mlx-platform.c b/drivers/platform/x86/mlx-platform.c
+--- a/drivers/platform/x86/mlx-platform.c	2021-01-04 11:09:09.735229000 +0200
++++ b/drivers/platform/x86/mlx-platform.c	2021-01-04 11:11:59.456179000 +0200
+@@ -6,6 +6,7 @@
+  * Copyright (C) 2016-2018 Vadim Pasternak <vadimp@mellanox.com>
+  */
+ 
++#include <asm/intel-family.h>
+ #include <linux/device.h>
+ #include <linux/dmi.h>
+ #include <linux/i2c.h>
+@@ -4036,6 +4037,24 @@
+ 	return 1;
+ }
+ 
++static int __init mlxplat_dmi_undefined_matched(const struct dmi_system_id *dmi)
++{
++	switch (boot_cpu_data.x86_model) {
++	case INTEL_FAM6_IVYBRIDGE:
++		return mlxplat_dmi_default_matched(dmi);
++
++	case INTEL_FAM6_ATOM_SILVERMONT_D:
++		return mlxplat_dmi_msn21xx_matched(dmi);
++
++	case INTEL_FAM6_BROADWELL_D: /* fall through */
++	case INTEL_FAM6_KABYLAKE:
++		return mlxplat_dmi_qmb7xx_matched(dmi);
++
++	default:
++		return 1;
++	}
++}
++
+ static const struct dmi_system_id mlxplat_dmi_table[] __initconst = {
+ 	{
+ 		.callback = mlxplat_dmi_default_matched,
+@@ -4070,6 +4089,12 @@
+ 	{
+ 		.callback = mlxplat_dmi_qmb7xx_matched,
+ 		.matches = {
++			DMI_MATCH(DMI_BOARD_NAME, "VMOD0006"),
++		},
++	},
++	{
++		.callback = mlxplat_dmi_qmb7xx_matched,
++		.matches = {
+ 			DMI_MATCH(DMI_BOARD_NAME, "VMOD0007"),
+ 		},
+ 	},
+@@ -4168,6 +4193,20 @@
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "MSN38"),
+ 		},
+ 	},
++	{
++		.callback = mlxplat_dmi_msn21xx_matched,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "Mellanox Technologies"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "MMB75"),
++		},
++	},
++	/* This tuple must be last */
++	{
++		.callback = mlxplat_dmi_undefined_matched,
++		.matches = {
++			DMI_MATCH(DMI_BOARD_VENDOR, "Mellanox Technologies"),
++		},
++	},
+ 	{ }
+ };
+ 

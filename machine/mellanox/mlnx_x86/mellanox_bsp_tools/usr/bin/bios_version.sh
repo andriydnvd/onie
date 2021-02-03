@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Mellanox Technologies, Ltd. All rights reserved.
+# Copyright (C) 2017 Mellanox Technologies, Ltd. All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -21,20 +21,39 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
 # description: Shows BIOS version
+
+#!/bin/sh
 
 log=/var/log/messages
 
-ver=$(dmidecode -t0 | grep -m1 Version | awk '{print $2}')
+get_bios_version()
+{
+	ver=$(dmidecode -t0 | grep -m1 Version | awk '{print $2}')
 
-subver=$(dmidecode -t2 | grep -m1 Version | awk '{$1=""; print $0}')
-if echo "$subver" | grep -q "O.E.M."; then                          
-	subver="Official AMI Release"
-fi
+# In new project BIOS Subversion is provided over SMBios type11 OEM String1
+# In old project (0ABZS) BIOS Subversion was provided over SMBios type2
+	subver=$(dmidecode -t2 | grep -m1 Version | awk '{$1=""; print $0}' | cut -b 2-)
+	if echo "$subver" | grep -vq "0ABZS"
+	then
+		subver=$(dmidecode -t11 | grep -m1 "String 1:" | awk '{$1=""; $2="";print $0}' | cut -b 3-)
+		if echo "$subver" | grep -q "O.E.M"
+		then
+			subver="Official AMI Release"
+		fi
+	fi
 
-rel=$(dmidecode -t0 | grep -m 1 'Release Date' | awk '{print $3}')
+	rel=$(dmidecode -t0 | grep -m 1 'Release Date' | awk '{print $3}')
+}
 
-echo -e "\nBIOS Version:\t\t" "$ver" | tee -a $log
-echo -e "BIOS Release Date:\t" "$rel" | tee -a $log
-echo -e "BIOS SubVersion:\t" "$subver" | tee -a $log
+show_version()
+{
+	echo -e "\nBIOS Version:\t\t" "$ver" | tee -a $log
+	echo -e "BIOS Release Date:\t" "$rel" | tee -a $log
+	echo -e "BIOS SubVersion:\t" "$subver" | tee -a $log
+}
+
+get_bios_version
+show_version		
+
+exit 0

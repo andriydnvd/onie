@@ -1,0 +1,68 @@
+diff -Nur a/include/24cXX.h b/include/24cXX.h
+--- a/include/24cXX.h	2019-12-18 16:01:07.173906611 +0000
++++ b/include/24cXX.h	2019-12-18 16:00:07.221432287 +0000
+@@ -21,6 +21,9 @@
+ #define EEPROM_TYPE_8BIT_ADDR	1
+ #define EEPROM_TYPE_16BIT_ADDR 	2
+ 
++#define EEPROM_WP_REG_ADDR	0x252E
++#define EEPROM_WP_BIT		3
++
+ /*
+  * SYS_EEPROM_I2C_WRITE_1B_DELAY: delay number of microseconds after writing 1 byte
+  * SYS_EEPROM_I2C_WRITE_2B_DELAY: delay number of microseconds after writing 2 bytes
+diff -Nur a/miscutils/24cXX.c b/miscutils/24cXX.c
+--- a/miscutils/24cXX.c	2019-12-18 16:01:15.701974087 +0000
++++ b/miscutils/24cXX.c	2019-12-18 16:56:28.431614218 +0000
+@@ -20,6 +20,7 @@
+ #include <linux/fs.h>
+ #include "i2c-dev.h"
+ #include <sys/types.h>
++#include <sys/io.h>
+ #include <sys/ioctl.h>
+ #include <errno.h>
+ #include <assert.h>
+@@ -68,6 +69,28 @@
+ 		exit(1); } \
+ 	} while(0);
+ 
++static int eeprom_wp_open(void)
++{
++	unsigned char val;
++	
++	if (iopl(3) < 0)
++		return -1;
++
++	val = inb(EEPROM_WP_REG_ADDR);
++	val &= ~(1 << EEPROM_WP_BIT);
++	outb(val, EEPROM_WP_REG_ADDR);
++	return 0;
++}
++
++static void eeprom_wp_close(void)
++{
++	unsigned char val;
++
++	val = inb(EEPROM_WP_REG_ADDR);
++	val |= 1 << EEPROM_WP_BIT;
++	outb(val, EEPROM_WP_REG_ADDR);
++}
++
+ int eeprom_open(char *dev_fqn, int addr, int type, struct eeprom* e)
+ {
+ 	int fd, r;
+@@ -99,11 +122,13 @@
+ 	e->addr = addr;
+ 	e->dev = dev_fqn;
+ 	e->type = type;
+-	return 0;
++
++	return eeprom_wp_open();
+ }
+ 
+ int eeprom_close(struct eeprom *e)
+ {
++	eeprom_wp_close();
+ 	close(e->fd);
+ 	e->fd = -1;
+ 	e->dev = 0;

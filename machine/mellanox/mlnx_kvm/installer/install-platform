@@ -1,0 +1,19 @@
+# Overrides install.sh
+
+check_machine_image()
+{
+    onie_mlnx_vendor_id=33049
+    if [ "$onie_build_machine" != "$image_build_machine" ] ; then
+        if [ "$onie_vendor_id" != "$onie_mlnx_vendor_id" ] ; then
+		fail=yes
+	fi
+    fi
+    if [ "$onie_machine_rev" != "$image_machine_rev" ] ; then
+	if [ "$onie_vendor_id" != "$onie_mlnx_vendor_id" ] ; then
+		fail=yes
+	fi
+    fi
+    if [ "$onie_arch" != "$image_arch" ] ; then
+        fail=yes
+    fi
+}

@@ -1,0 +1,11 @@
+--- a/drivers/pinctrl/intel/pinctrl-intel.c	2020-12-01 18:03:33.412533937 +0200
++++ b/drivers/pinctrl/intel/pinctrl-intel.c	2020-12-01 18:04:07.124798982 +0200
+@@ -1221,7 +1221,7 @@
+ 	pctrl->chip.ngpio = intel_gpio_ngpio(pctrl);
+ 	pctrl->chip.label = dev_name(pctrl->dev);
+ 	pctrl->chip.parent = pctrl->dev;
+-	pctrl->chip.base = -1;
++	pctrl->chip.base = 0;
+ 	pctrl->irq = irq;
+ 
+ 	/* Setup IRQ chip */
