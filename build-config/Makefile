@@ -343,7 +343,21 @@ endif
 ONIE_MIRROR	?= http://mirror.opencompute.org/onie
 
 # By default do not enable secure boot
+
 SECURE_BOOT_ENABLE ?= no
+SECURE_BOOT_EXT ?= no
+
+# If initrd verification included, check key variables
+ifeq ($(SECURE_BOOT_EXT),yes)
+  SECURE_BOOT_ENABLE = yes
+  ifeq ($(GPG_SIGN_PUBRING),)
+    $(error GPG_SIGN_PUBRING is not set)
+  endif
+  ifeq ($(GPG_SIGN_SECRING),)
+    $(error GPG_SIGN_SECRING is not set)
+  endif
+endif
+
 ifeq ($(SECURE_BOOT_ENABLE),yes)
   PESIGN_ENABLE = yes
   GNU_EFI_ENABLE = yes

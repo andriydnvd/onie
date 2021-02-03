@@ -34,7 +34,9 @@ KERNEL_STAMP		= $(KERNEL_SOURCE_STAMP) \
 KERNEL			= $(KERNEL_STAMP)
 
 KERNEL_VMLINUZ		= $(IMAGEDIR)/$(MACHINE_PREFIX).vmlinuz
+KERNEL_VMLINUZ_SIG      = $(KERNEL_VMLINUZ).sig
 UPDATER_VMLINUZ		= $(MBUILDDIR)/onie.vmlinuz
+UPDATER_VMLINUZ_SIG     = $(UPDATER_VMLINUZ).sig
 
 PHONY += kernel kernel-source kernel-patch kernel-config
 PHONY += kernel-build kernel-install kernel-clean
@@ -141,6 +143,11 @@ ifeq ($(SECURE_BOOT_ENABLE),yes)
 	$(Q) sbsign --key $(ONIE_VENDOR_SECRET_KEY_PEM) \
 		--cert $(ONIE_VENDOR_CERT_PEM) \
 		--output $(KERNEL_VMLINUZ) $(KERNEL_VMLINUZ).unsigned
+endif
+ifeq ($(SECURE_BOOT_EXT),yes)
+	$(Q) echo "==== GPG sign vmlinuz ===="
+	$(Q) fakeroot -- $(SCRIPTDIR)/gpg-sign.sh $(GPG_SIGN_SECRING) ${KERNEL_VMLINUZ}
+	$(Q) ln -sf $(KERNEL_VMLINUZ_SIG) $(UPDATER_VMLINUZ_SIG)
 endif
 	$(Q) ln -sf $(KERNEL_VMLINUZ) $(UPDATER_VMLINUZ)
 	$(Q) touch $@

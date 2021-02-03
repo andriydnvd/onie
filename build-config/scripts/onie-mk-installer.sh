@@ -207,7 +207,14 @@ EOF
 
     sed -i -e "s/%%UEFI_BOOT_LOADER%%/$UEFI_BOOT_LOADER/" \
         $tmp_installdir/grub.d/50_onie_grub
+    if [ -n "$GPG_SIGN_SECRING" ] ; then
+        $tmp_installdir/grub.d/51_onie_grub_secure_boot
+	SCRIPT_DIR=$(dirname "$0")
+	$SCRIPT_DIR/gpg-sign.sh $GPG_SIGN_SECRING $tmp_installdir/grub_sb.cfg
+	$SCRIPT_DIR/gpg-sign.sh $GPG_SIGN_SECRING $tmp_installdir/grub.cfg
+    fi
 fi
+
 
 sed -e 's/onie_/image_/' $machine_conf > $tmp_installdir/machine-build.conf || exit 1
 echo -n "."

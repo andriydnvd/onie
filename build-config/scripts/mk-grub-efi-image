@@ -89,6 +89,17 @@ GRUB_MODULES="
 	zfs
 	zfscrypt
 	zfsinfo
+	fshelp
+	gcry_dsa
+	gcry_rsa
+	gcry_sha1
+	gcry_sha256
+	gcry_sha512
+	efi_gop
+	efi_uga
+	crypto
+	bufio
+	archelp
 "
 
 # Make an embedded config that reads a grub.cfg from the EFI directory
@@ -98,8 +109,12 @@ cat <<EOF > $tmp_config
 configfile \$cmdpath/grub.cfg
 EOF
 
+# Add public key to grub core, if GRUB_GPG_PUB_RING is defined
+# Grub will verify all file it opens with this public key
+if [ -z ${GPG_SIGN_PUBRING} ]; then GPG_PUB_KEY=" "; else GPG_PUB_KEY=" --pubkey ${GPG_SIGN_PUBRING} "; fi
+
 "$grub_mkimage" --format="${ARCH}-efi" --directory="$GRUB_TARGET_LIB_UEFI_DIR" \
-                --prefix="/bogus" --config="$tmp_config" --output="$OUTPUT_IMAGE" \
-                $GRUB_MODULES
+	                --prefix="/bogus" --config="$tmp_config" ${GPG_PUB_KEY} --output="$OUTPUT_IMAGE" \
+			$GRUB_MODULES
 
 rm -f $tmp_config
