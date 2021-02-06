@@ -153,6 +153,17 @@ update_syseeprom()
     fi
 }
 
+set_default_passwd()
+{
+    # If secure boot is enabled, there is an option to set default password.
+    # This function is template. Default password is empty.
+    mkdir -p $onie_root_dir/config/etc
+    cat<< EOF > "$onie_root_dir/config/etc/passwd"
+root::0:0:root:/root:/bin/sh
+EOF
+
+}
+
 [ -r ./install-platform ] && . ./install-platform
 
 fail=

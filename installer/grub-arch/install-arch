@@ -928,6 +928,11 @@ install_image()
     # update sys_eeprom
     update_syseeprom
 
+    # set user password
+    if [ "$image_secure_boot" = "yes" ] ; then
+        set_default_passwd
+    fi
+
 }
 
 # Local Variables:
