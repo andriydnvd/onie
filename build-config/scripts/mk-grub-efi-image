@@ -102,12 +102,56 @@ GRUB_MODULES="
 	archelp
 "
 
-# Make an embedded config that reads a grub.cfg from the EFI directory
-# where the final grub binary is running.
+# Make tmp file for embedded config.
 tmp_config=$(mktemp)
-cat <<EOF > $tmp_config
-configfile \$cmdpath/grub.cfg
+
+# SECURE_BOOT_EXT enables grub password
+if [ "$SECURE_BOOT_EXT" = "yes" ] ; then
+    if [ -z "$GRUB_USER" ]; then
+        echo "ERROR: GRUB_USER is not set"
+        exit 1
+    fi
+    # Generate hashed password for GRUB if password is provided with plaintext
+    if [ -n "$GRUB_PASSWD_PLAINTEXT" ] ; then
+	if [ -x "$(command -v grub-mkpasswd-pbkdf2)" ]; then
+            MKPASSWD_HASH=$(grub-mkpasswd-pbkdf2 << EOF
+${GRUB_PASSWD_PLAINTEXT}
+${GRUB_PASSWD_PLAINTEXT}
 EOF
+)
+	elif [ -x "$(command -v grub2-mkpasswd-pbkdf2)" ]; then
+           MKPASSWD_HASH=$(grub2-mkpasswd-pbkdf2 << EOF
+${GRUB_PASSWD_PLAINTEXT}
+${GRUB_PASSWD_PLAINTEXT}
+EOF
+)
+	fi
+	GRUB_PASSWORD_HASH=$(echo "$MKPASSWD_HASH" | grep -o "grub.*")
+    elif [ -n "$GRUB_PASSWD_HASHED" ]; then
+        # Use hashed pasword if it is provided by user
+        GRUB_PASSWORD_HASH="$GRUB_PASSWD_HASHED"
+    else
+        echo "ERROR: Grub password is not set: GRUB_PASSWD_PLAINTEXT or GRUB_PASSWD_HASHED"
+        exit 1
+    fi
+
+    # Make an embedded config that:
+    # - enables grub password
+    # - reads a grub.cfg from the EFI directory where the final grub binary is running.
+    cat <<EOF > $tmp_config
+set superusers="$GRUB_USER"
+export superusers
+password_pbkdf2 $GRUB_USER $GRUB_PASSWORD_HASH
+configfile \$cmdpath/grub.cfg"
+EOF
+
+else
+    # Make an embedded config that reads a grub.cfg from the EFI directory
+    # where the final grub binary is running.
+    cat <<EOF > $tmp_config
+configfile \$cmdpath/grub.cfg"
+EOF
+fi
 
 # Add public key to grub core, if GRUB_GPG_PUB_RING is defined
 # Grub will verify all file it opens with this public key

@@ -347,7 +347,10 @@ ONIE_MIRROR	?= http://mirror.opencompute.org/onie
 SECURE_BOOT_ENABLE ?= no
 SECURE_BOOT_EXT ?= no
 
-# If initrd verification included, check key variables
+# SECURE_BOOT_EXT enables:
+# - grub signature verification functionality
+# - grub password protection.
+# - SECURE_BOOT_ENABLE including onie password protection
 ifeq ($(SECURE_BOOT_EXT),yes)
   SECURE_BOOT_ENABLE = yes
   ifeq ($(GPG_SIGN_PUBRING),)
@@ -355,6 +358,11 @@ ifeq ($(SECURE_BOOT_EXT),yes)
   endif
   ifeq ($(GPG_SIGN_SECRING),)
     $(error GPG_SIGN_SECRING is not set)
+  endif
+  ifeq ($(GRUB_PASSWD_PLAINTEXT),)
+  ifeq ($(GRUB_PASSWD_HASHED),)
+    $(error GRUB_PASSWD_PLAINTEXT or GRUB_PASSWD_HASHED are not set)
+  endif
   endif
 endif
 
