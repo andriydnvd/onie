@@ -155,7 +155,7 @@ fi
 
 # Add public key to grub core, if GRUB_GPG_PUB_RING is defined
 # Grub will verify all file it opens with this public key
-if [ -z ${GPG_SIGN_PUBRING} ]; then GPG_PUB_KEY=" "; else GPG_PUB_KEY=" --pubkey ${GPG_SIGN_PUBRING} "; fi
+if [ -n "${GPG_SIGN_PUBRING}" -a -n "${SECURE_BOOT_EXT}" ]; then GPG_PUB_KEY=" --pubkey ${GPG_SIGN_PUBRING} "; else GPG_PUB_KEY=" "; fi
 
 "$grub_mkimage" --format="${ARCH}-efi" --directory="$GRUB_TARGET_LIB_UEFI_DIR" \
 	                --prefix="/bogus" --config="$tmp_config" ${GPG_PUB_KEY} --output="$OUTPUT_IMAGE" \
