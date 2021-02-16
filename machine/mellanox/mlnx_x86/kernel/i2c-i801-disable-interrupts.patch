@@ -1,0 +1,12 @@
+diff -Nur a/drivers/i2c/busses/i2c-i801.c b/drivers/i2c/busses/i2c-i801.c
+--- a/drivers/i2c/busses/i2c-i801.c	2021-02-15 21:06:18.742368378 +0200
++++ b/drivers/i2c/busses/i2c-i801.c	2021-02-15 21:44:23.164465474 +0200
+@@ -299,7 +299,7 @@
+ 	"SMBus Host Notify",
+ };
+ 
+-static unsigned int disable_features;
++static unsigned int disable_features=0x10;
+ module_param(disable_features, uint, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(disable_features, "Disable selected driver features:\n"
+ 	"\t\t  0x01  disable SMBus PEC\n"
