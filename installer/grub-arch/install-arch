@@ -760,7 +760,7 @@ install_uefi_loader()
         local loader_dir="${uefi_dir}/EFI/onie"
         local BOOT_dir="${uefi_dir}/EFI/BOOT"
         mkdir -p $BOOT_dir
-            cp -f $loader_dir/* ${BOOT_dir}/ || {
+        cp -f $loader_dir/* ${BOOT_dir}/ || {
             echo "ERROR: Unable to copy loader directory: $loader_dir to ${BOOT_dir}"
             return 1
         }
