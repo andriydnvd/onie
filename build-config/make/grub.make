@@ -377,9 +377,8 @@ $(GRUB_INSTALL_SB_STAMP): $(SBSIGNTOOL_INSTALL_STAMP) $(GRUB_INSTALL_STAMP) $(GR
 	$(Q) echo "=== Secure Boot: grub.make  $(GRUB_SECURE_BOOT_IMAGE) sbsign --key $(ONIE_VENDOR_SECRET_KEY_PEM) \
 		--cert $(ONIE_VENDOR_CERT_PEM) \
 		--output $(GRUB_SECURE_BOOT_IMAGE) $(GRUB_MONOLITH_IMAGE)"
-	$(Q) sbsign --key $(ONIE_VENDOR_SECRET_KEY_PEM) \
-		--cert $(ONIE_VENDOR_CERT_PEM) \
-		--output $(GRUB_SECURE_BOOT_IMAGE) $(GRUB_MONOLITH_IMAGE)
+	$(Q) $(SCRIPTDIR)/efi-sign.sh $(ONIE_VENDOR_SECRET_KEY_PEM) \
+		$(ONIE_VENDOR_CERT_PEM) $(GRUB_MONOLITH_IMAGE) $(GRUB_SECURE_BOOT_IMAGE)
 	$(Q) touch $@
 
 #-------------------------------------------------------------------------------

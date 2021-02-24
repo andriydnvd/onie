@@ -142,10 +142,11 @@ $(SHIM_SELF_SIGN_STAMP): $(SHIM_BUILD_STAMP) | $(DEV_SYSROOT_INIT_STAMP)
 	$(Q) rm -f $@ && eval $(PROFILE_STAMP)
 	$(Q) echo "====  Self signing shim-$(SHIM_VERSION) ===="
 	$(Q) echo "This is for testing purposes only."
-	$(Q) sbsign --key $(SHIM_SELF_SIGN_SECRET_KEY_PEM) \
-		--cert $(SHIM_SELF_SIGN_PUBLIC_CERT_PEM) \
-		--output "$(SHIM_INSTALL_DIR)/shim$(EFI_ARCH).efi.signed" \
-		"$(SHIM_INSTALL_DIR)/shim$(EFI_ARCH).efi"
+	$(Q) $(SCRIPTDIR)/efi-sign.sh $(SHIM_SELF_SIGN_SECRET_KEY_PEM) \
+		$(SHIM_SELF_SIGN_PUBLIC_CERT_PEM) \
+		"$(SHIM_INSTALL_DIR)/shim$(EFI_ARCH).efi" \
+		$(SHIM_INSTALL_DIR)/shim$(EFI_ARCH).efi.signed
+
 	$(Q) touch $@
 
 MACHINE_CLEAN += shim-clean

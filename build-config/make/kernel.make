@@ -140,9 +140,8 @@ endif
 ifeq ($(SECURE_BOOT_ENABLE),yes)
 	$(Q) echo "====  Signing kernel secure boot image ===="
 	$(Q) cp -vf $(KERNEL_VMLINUZ) $(KERNEL_VMLINUZ).unsigned
-	$(Q) sbsign --key $(ONIE_VENDOR_SECRET_KEY_PEM) \
-		--cert $(ONIE_VENDOR_CERT_PEM) \
-		--output $(KERNEL_VMLINUZ) $(KERNEL_VMLINUZ).unsigned
+	$(Q) $(SCRIPTDIR)/efi-sign.sh $(ONIE_VENDOR_SECRET_KEY_PEM) \
+		$(ONIE_VENDOR_CERT_PEM) $(KERNEL_VMLINUZ).unsigned $(KERNEL_VMLINUZ)
 endif
 ifeq ($(SECURE_BOOT_EXT),yes)
 	$(Q) echo "==== GPG sign vmlinuz ===="
