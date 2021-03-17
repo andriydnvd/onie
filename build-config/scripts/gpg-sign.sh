@@ -4,7 +4,6 @@
 #
 #  SPDX-License-Identifier:     GPL-2.0
 
-set -e
 #
 # Sign file with gpg secret key
 #
@@ -35,6 +34,8 @@ EOF
 
 # Kill gpg agent to prevent sporadic gpg errors, related to running script in combination with fakeroot
 killall gpg-agent
+
+set -e
 GPG_KEY_ID=$(gpg --openpgp --import "${GPG_SIGN_SECRING}" 2>&1 | \
 	grep -m 1 "gpg: key"| sed -e 's/.*key \(.*\): .*/\1/')
 gpg -v --default-key "${GPG_KEY_ID}" --yes --detach-sign --output ${FILE}.sig  ${FILE}
