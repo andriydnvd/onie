@@ -371,7 +371,6 @@ grub-host-clean:
 grub-install-sb: $(GRUB_INSTALL_SB_STAMP)
 $(GRUB_INSTALL_SB_STAMP): $(SBSIGNTOOL_INSTALL_STAMP) $(GRUB_INSTALL_STAMP) $(GRUB_HOST_INSTALL_STAMP)
 	$(Q) echo "====  Building grub-$(ARCH)-efi-$(GRUB_VERSION) monolithic secure boot image ===="
-	$(Q) rm -rf $(SYSROOTDIR)/usr/lib/grub/$(ARCH)-efi
 	$(Q) $(SCRIPTDIR)/mk-grub-efi-image $(ARCH) $(GRUB_HOST_BIN_UEFI_DIR) \
 		$(GRUB_TARGET_LIB_UEFI_DIR) $(GRUB_MONOLITH_IMAGE)
 	$(Q) echo "=== Secure Boot: grub.make  $(GRUB_SECURE_BOOT_IMAGE) sbsign --key $(ONIE_VENDOR_SECRET_KEY_PEM) \

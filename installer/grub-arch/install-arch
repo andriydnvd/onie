@@ -544,7 +544,7 @@ install_grub_config()
     if [ -r $boot_dir/onie/grub/grub-variables ] ; then
         . $boot_dir/onie/grub/grub-variables
     fi
-    if [ "$image_secure_boot_ext" = "yes" ] ; then
+    if [ "$image_secure_boot_ext" = "yes" ] && [ "$install_firmware" = "uefi" ] ; then
         /bin/cp grub_sb.cfg $grub_root_dir/grub.cfg || {
             echo "ERROR: copying grub config to destatition: $grub_root_dir"
             exit 1
@@ -729,14 +729,14 @@ install_uefi_loader()
     local boot_dev="$2"
     local boot_dir="$3"
 
+    install_uefi_grub "$uefi_dir" "$boot_dev" "$boot_dir" || {
+        echo "ERROR: problems installing grub on: $boot_dev"
+        exit 1
+    }
+
     if [ "$image_secure_boot" = "yes" ] ; then
         install_uefi_shim_grub "$uefi_dir" "$boot_dev" "$boot_dir" || {
             echo "ERROR: problems installing shim and grub on: $boot_dev"
-            exit 1
-        }
-    else
-        install_uefi_grub "$uefi_dir" "$boot_dev" "$boot_dir" || {
-            echo "ERROR: problems installing grub on: $boot_dev"
             exit 1
         }
     fi
@@ -756,7 +756,7 @@ install_uefi_loader()
     install_grub_config $boot_dir
 
     # Create default EFI loader BOOT/BOOTX64.efi
-    if [ "$image_secure_boot" = "yes" ] ; then
+    if [ "$image_secure_boot" = "yes" ] && [ "$install_firmware" = "uefi" ] ; then
         local loader_dir="${uefi_dir}/EFI/onie"
         local BOOT_dir="${uefi_dir}/EFI/BOOT"
         mkdir -p $BOOT_dir
@@ -856,7 +856,7 @@ install_image()
         echo "Error: Unable to copy ONIE initrd to $onie_root_dir/$initrd_name"
         exit 1
     }
-    if [ "$image_secure_boot_ext" = "yes" ] ; then
+    if [ "$image_secure_boot_ext" = "yes" ] && [ "$install_firmware" = "uefi" ] ; then
         cp onie.vmlinuz.sig $onie_root_dir/$kernel_signature || {
             echo "ERROR: problems installing kernel signature on: $boot_dev"
             exit 1
