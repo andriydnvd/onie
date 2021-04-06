@@ -929,7 +929,7 @@ install_image()
     update_syseeprom
 
     # set user password
-    if [ "$image_secure_boot_ext" = "yes" ] ; then
+    if [ "$image_secure_boot_ext" = "yes" ]  && [ "$install_firmware" = "uefi" ] ; then
         set_default_passwd
     fi
 

@@ -1,0 +1,21 @@
+#!/bin/sh
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+secure_boot=0
+
+if [ -e /sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c ]; then
+	secure_boot="$(efivar -d -n 8be4df61-93ca-11d2-aa0d-00e098032b8c-SecureBoot)"	
+fi
+
+if [ "$secure_boot" -eq 0 ]; then
+	rm -f /bin/onie-console
+	ln -s /bin/onie-console-open /bin/onie-console
+	rm -f /etc/passwd
+	ln -s /etc/passwd-open /etc/passwd
+else
+	rm -f /etc/passwd
+	ln -s /mnt/onie-boot/onie/config/etc/passwd /etc/passwd
+fi
+
+exit 0

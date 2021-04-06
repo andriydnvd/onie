@@ -275,12 +275,12 @@ $(SYSROOT_COMPLETE_STAMP): $(SYSROOT_CHECK_STAMP)
 	     fi
 	$(Q) if [ -d $(MACHINEDIR)/rootconf/sysroot-etc ] ; then \
 		cp -ar $(MACHINEDIR)/rootconf/sysroot-etc/* $(SYSROOTDIR)/etc/ ; \
-		cp -ar $(MACHINEDIR)/rootconf/sysroot-etc/* $(SYSROOTDIR)/etc/ ; \
 	     fi
 ifeq ($(SECURE_BOOT_EXT),yes)
-	$(Q) if [ -r $(SYSROOTDIR)/etc/passwd ]; then rm $(SYSROOTDIR)/etc/passwd; fi
-	$(Q) sed -i '/log_begin_msg "Starting:*/a \        rm  -f /etc/passwd && ln -s /mnt/onie-boot/onie/config/etc/passwd /etc/passwd' $(SYSROOTDIR)/etc/init.d/dropbear.sh
 	$(Q) sed -i 's/exec \/bin\/sh -l/exec \/bin\/login/' $(SYSROOTDIR)/bin/onie-console
+	$(Q) if [ -e $(MACHINEDIR)/rootconf/sysroot-etc/passwd-secured ] ; then \
+                cp -a $(MACHINEDIR)/rootconf/sysroot-etc/passwd-secured $(SYSROOTDIR)/etc/passwd ; \
+             fi
 endif
 	$(Q) cd $(SYSROOTDIR) && ln -fs sbin/init ./init
 	$(Q) rm -f $(LSB_RELEASE_FILE)
