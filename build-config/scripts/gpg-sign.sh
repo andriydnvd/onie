@@ -36,6 +36,14 @@ EOF
 killall gpg-agent
 
 set -e
-GPG_KEY_ID=$(gpg --openpgp --import "${GPG_SIGN_SECRING}" 2>&1 | \
-	grep -m 1 "gpg: key"| sed -e 's/.*key \(.*\): .*/\1/')
-gpg -v --default-key "${GPG_KEY_ID}" --yes --detach-sign --output ${FILE}.sig  ${FILE}
+
+# Create tmp folder for new db
+tmp_dir=$(mktemp -d -t gpg-XXXXXXXXXX)
+
+GPG_KEY_ID=$(gpg --openpgp --homedir "${tmp_dir}" --import "${GPG_SIGN_SECRING}" 2>&1 | \
+	        grep -m 1 "gpg: key "| sed -e 's/.*key \(.*\): .*/\1/')
+gpg -v --homedir ${tmp_dir} --default-key "${GPG_KEY_ID}" --yes --detach-sign --output ${FILE}.sig  ${FILE}
+
+# Clear tmp folder
+rm -rf $tmp_dir
+
