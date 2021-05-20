@@ -545,19 +545,21 @@ install_grub_config()
         . $boot_dir/onie/grub/grub-variables
     fi
     if [ "$image_secure_boot_ext" = "yes" ] && [ "$install_firmware" = "uefi" ] ; then
-        /bin/cp grub_sb.cfg $grub_root_dir/grub.cfg || {
+        cp grub_sb.cfg $grub_root_dir/grub.cfg || {
             echo "ERROR: copying grub config to destatition: $grub_root_dir"
             exit 1
         }
-        /bin/cp grub_sb.cfg.sig $grub_root_dir/grub.cfg.sig || {
+        cp grub_sb.cfg.sig $grub_root_dir/grub.cfg.sig || {
             echo "ERROR: copying grub config  sig to destatition: $grub_root_dir"
             exit 1
         }
-        /bin/cp grub.cfg /boot/efi/EFI/onie/grub.cfg || {
+        #protect grub.cfg from possible modifications by NOS installer
+        chattr +i $grub_root_dir/grub.cfg
+        cp grub.cfg /boot/efi/EFI/onie/grub.cfg || {
             echo "ERROR: copying grub config to destatition: /boot/efi/EFI/onie"
             exit 1
         }
-        /bin/cp grub.cfg.sig /boot/efi/EFI/onie/grub.cfg.sig || {
+        cp grub.cfg.sig /boot/efi/EFI/onie/grub.cfg.sig || {
             echo "ERROR: copying grub config to destatition: /boot/efi/EFI/onie"
             exit 1
         }
