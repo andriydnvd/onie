@@ -28,9 +28,19 @@ grub_sb_cfg=$tmp_install_dir/grub_sb.cfg
 
 # Generate tiny grub config to be stored with grub.efi
 cat<< EOF > "${tmp_install_dir}/grub.cfg"
+is_sb_enabled
+set sb_enabled="\$?"
+if [ "\$sb_enabled" = "1" ] ; then
+  set check_signatures=enforce
+  set grub_cfg_name="grub_sb.cfg"
+else
+   set check_signatures=no
+   set grub_cfg_name="grub.cfg"
+fi
+export check_signatures
 search --no-floppy --label --set=root ONIE-BOOT
 set prefix=(\$root)'/grub'
-configfile \$prefix/$grub_sb_cfg_name
+configfile \$prefix/\$grub_cfg_name
 EOF
 
 if [ -z "$GRUB_ONIE_SERIAL_COMMAND" ] ||

@@ -50,6 +50,7 @@ GRUB_MODULES="
 	halt
 	hfsplus
 	iso9660
+	is_sb_enabled
 	jpeg
 	keystatus
 	loadenv

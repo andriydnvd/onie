@@ -545,16 +545,23 @@ install_grub_config()
         . $boot_dir/onie/grub/grub-variables
     fi
     if [ "$image_secure_boot_ext" = "yes" ] && [ "$install_firmware" = "uefi" ] ; then
+        # common grub config file, that is used if uefi secure boot is disabled
         cp grub_sb.cfg $grub_root_dir/grub.cfg || {
             echo "ERROR: copying grub config to destatition: $grub_root_dir"
             exit 1
         }
-        cp grub_sb.cfg.sig $grub_root_dir/grub.cfg.sig || {
+        # grub config file, that is used if uefi secure boot is enabled
+        cp grub_sb.cfg $grub_root_dir/grub_sb.cfg || {
+            echo "ERROR: copying grub config to destatition: $grub_root_dir"
+            exit 1
+        }
+        # gpg signature for grub config
+        cp grub_sb.cfg.sig $grub_root_dir/grub_sb.cfg.sig || {
             echo "ERROR: copying grub config  sig to destatition: $grub_root_dir"
             exit 1
         }
-        #protect grub.cfg from possible modifications by NOS installer
-        chattr +i $grub_root_dir/grub.cfg
+        # protect grub_sb.cfg from possible modifications by NOS installer
+        chattr +i $grub_root_dir/grub_sb.cfg
         cp grub.cfg /boot/efi/EFI/onie/grub.cfg || {
             echo "ERROR: copying grub config to destatition: /boot/efi/EFI/onie"
             exit 1
@@ -762,13 +769,10 @@ install_uefi_loader()
         local loader_dir="${uefi_dir}/EFI/onie"
         local BOOT_dir="${uefi_dir}/EFI/BOOT"
         mkdir -p $BOOT_dir
-        cp -f $loader_dir/* ${BOOT_dir}/ || {
+        cp -rf $loader_dir/* ${BOOT_dir}/ || {
             echo "ERROR: Unable to copy loader directory: $loader_dir to ${BOOT_dir}"
             return 1
         }
-        if [ -f ${BOOT_dir}/mmx64.efi ] ; then
-            rm -f ${BOOT_dir}/mmx64.efi
-        fi
         mv "${BOOT_dir}/shimx64.efi" "${BOOT_dir}/BOOTX64.EFI"
     fi
 }
