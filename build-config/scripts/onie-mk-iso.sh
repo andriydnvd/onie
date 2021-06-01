@@ -257,8 +257,7 @@ if [ "$UEFI_ENABLE" = "yes" ] ; then
     # UEFI loader image(s) into it.
     if [ "$SECURE_BOOT_ENABLE" = "yes" ] ; then
         # sign the grub image with the onie vendor key
-        sbsign --key $ONIE_VENDOR_SECRET_KEY_PEM --cert $ONIE_VENDOR_CERT_PEM \
-               --output $RECOVERY_EFI_GRUBX86_IMG $RECOVERY_GRUBX86_IMG
+        $SCRIPTDIR/efi-sign.sh $ONIE_VENDOR_SECRET_KEY_PEM $ONIE_VENDOR_CERT_PEM $RECOVERY_GRUBX86_IMG $RECOVERY_EFI_GRUBX86_IMG
         # copy shim into place as the loader
         cp $SB_SHIM $RECOVERY_EFI_BOOTX86_IMG
     else
