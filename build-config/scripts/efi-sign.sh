@@ -27,19 +27,19 @@ EOF
 }
 
 [ -r $ONIE_VENDOR_SECRET_KEY_PEM ] || {
-    echo "Error: ONIE_VENDOR_SECRET_KEY_PEM file does not exist"
+    echo "Error: ONIE_VENDOR_SECRET_KEY_PEM file does not exist: $ONIE_VENDOR_SECRET_KEY_PEM"
     usage
     exit 1
 }
 
 [ -r $ONIE_VENDOR_CERT_PEM ] || {
-    echo "Error: ONIE_VENDOR_CERT_PEM file does not exist"
+    echo "Error: ONIE_VENDOR_CERT_PEM file does not exist: $ONIE_VENDOR_CERT_PEM"
     usage
     exit 1
 }
 
 [ -r $FILE ] || {
-    echo "Error: ONIE_VENDOR_SECRET_KEY_PEM file does not exist"
+    echo "Error: File for signing does not exist: $FILE"
     usage
     exit 1
 }
