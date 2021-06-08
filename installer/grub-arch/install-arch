@@ -697,7 +697,7 @@ install_uefi_shim_grub()
     }
 
     # copy shim and grub binaries into loader directory
-    for f in shim mm grub ; do
+    for f in shim mm grub fb ; do
         local loader="${f}${image_uefi_arch}.efi"
         cp "$loader" $loader_dir || {
             echo "ERROR: Unable to copy loader file: $loader to loader_dir: $loader_dir"
@@ -773,7 +773,16 @@ install_uefi_loader()
         return 1
     }
     if [ "$image_secure_boot" = "yes" ]; then
+        # Make shim default fallback loader
         mv "${BOOT_dir}/shimx64.efi" "${BOOT_dir}/BOOTX64.EFI"
+        # Remove not needed mmx from /BOOT folder
+        if [ -f ${BOOT_dir}/mm${image_uefi_arch}.efi ] ; then
+            rm ${BOOT_dir}/mm${image_uefi_arch}.efi
+        fi
+        # Remove fallback efi file from efi/onie
+        if [ -f $loader_dir/fb${image_uefi_arch}.efi ] ; then
+            rm $loader_dir/fb${image_uefi_arch}.efi
+        fi
         if [ -e "$onie_root_dir/grub/BOOT.CSV_secured" ] ; then
             mv "$onie_root_dir/grub/BOOT.CSV_secured" "${loader_dir}/BOOT.CSV"
         fi
