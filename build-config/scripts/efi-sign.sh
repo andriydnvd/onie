@@ -26,6 +26,13 @@ Sign efi  <file>
 EOF
 }
 
+# PLATFORM_EFI_SIGN_SCRIPT - platform specific efi signing script
+# If platform sign script variable is defined, run platform script instead of default script.
+if [ -n ${PLATFORM_EFI_SIGN_SCRIPT} ] ; then
+    eval "${PLATFORM_EFI_SIGN_SCRIPT} $1 $2 $3 $4"
+    exit 0
+fi
+
 [ -r $ONIE_VENDOR_SECRET_KEY_PEM ] || {
     echo "Error: ONIE_VENDOR_SECRET_KEY_PEM file does not exist: $ONIE_VENDOR_SECRET_KEY_PEM"
     usage

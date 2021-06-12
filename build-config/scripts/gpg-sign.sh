@@ -20,6 +20,13 @@ Create detached gpg signature for <file> with <gpg secret key>
 EOF
 }
 
+# PLATFORM_GPG_SIGN_SCRIPT - platform specific gpg signing script
+# If platform sign script variable is defined, run platform script instead of default script.
+if [ -n ${PLATFORM_GPG_SIGN_SCRIPT} ] ; then
+    eval "${PLATFORM_GPG_SIGN_SCRIPT} $1 $2"
+    exit 0
+fi
+
 [ -r $GPG_SIGN_SECRING ] || {
     echo "Error: secret key file is not specified"
     usage
